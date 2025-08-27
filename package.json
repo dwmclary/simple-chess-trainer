@@ -1,0 +1,25 @@
+{
+  "name": "simple-chess-trainer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dwmclary/simple-chess-trainer.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/dwmclary/simple-chess-trainer/issues"
+  },
+  "homepage": "https://github.com/dwmclary/simple-chess-trainer#readme",
+  "dependencies": {
+    "chess.js": "^1.4.0",
+    "cm-chessboard": "^8.9.1"
+  }
+}

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Chess Trainer</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/chessboard.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/extensions/markers/markers.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='assets/extensions/promotion-dialog/promotion-dialog.css') }}" />
+</head>
+<body class="bg-gray-200">
+    <div class="container mx-auto mt-10 flex flex-col items-center">
+        <h1 class="text-4xl text-center mb-10">Simple Chess Trainer</h1>
+        <div id="board" class="w-full max-w-lg md:w-1/2"></div>
+    </div>
+
+<script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
