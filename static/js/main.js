@@ -5,19 +5,28 @@ import { PromotionDialog } from "/static/node_modules/cm-chessboard/src/extensio
 import { Chess } from "/static/node_modules/chess.js/dist/esm/chess.js"
 
 const chess = new Chess()
-const board = new Chessboard(document.getElementById("board"), {
-    position: chess.fen(),
-    assetsUrl: "/static/assets/",
-    responsive: true,
-    animationDuration: 300,
-    extensions: [
-        { class: Accessibility, props: { visuallyHidden: true } },
-        { class: Markers },
-        {class: PromotionDialog}
-    ]
-})
 
-board.enableMoveInput((event) => {
+
+  let seed = 71;
+    function random() {
+        const x = Math.sin(seed++) * 10000;
+        return x - Math.floor(x);
+    }
+    function makeEngineMove(chessboard) {
+        const possibleMoves = chess.moves({verbose: true})
+        if (possibleMoves.length > 0) {
+            const randomIndex = Math.floor(random() * possibleMoves.length)
+            const randomMove = possibleMoves[randomIndex]
+            setTimeout(() => { // smoother with 500ms delay
+                chess.move({from: randomMove.from, to: randomMove.to})
+                chessboard.setPosition(chess.fen(), true)
+                chessboard.enableMoveInput(inputHandler, COLOR.white)
+            }, 500)
+        }
+    }
+
+
+function inputHandler(event) {
     switch (event.type) {
         case INPUT_EVENT_TYPE.moveInputStarted:
             const moves = chess.moves({square: event.squareFrom, verbose: true})
@@ -64,4 +73,17 @@ board.enableMoveInput((event) => {
             event.chessboard.removeLegalMovesMarkers()
             break
     }
+}
+
+const board = new Chessboard(document.getElementById("board"), {
+    position: chess.fen(),
+    assetsUrl: "/static/assets/",
+    responsive: true,
+    animationDuration: 300,
+    extensions: [
+        { class: Accessibility, props: { visuallyHidden: true } },
+        { class: Markers },
+        {class: PromotionDialog}
+    ]
 })
+board.enableMoveInput(inputHandler, COLOR.white);
