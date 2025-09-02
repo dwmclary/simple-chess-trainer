@@ -6,24 +6,25 @@ import { Chess } from "/static/node_modules/chess.js/dist/esm/chess.js"
 
 const chess = new Chess()
 
+const stockfish = new Worker("/static/js/stockfish/stockfish.js");
 
-  let seed = 71;
-    function random() {
-        const x = Math.sin(seed++) * 10000;
-        return x - Math.floor(x);
+stockfish.onmessage = function(event) {
+    const message = event.data;
+    if (message.startsWith("bestmove")) {
+        const bestMove = message.split(" ")[1];
+        const from = bestMove.substring(0, 2);
+        const to = bestMove.substring(2, 4);
+        const promotion = bestMove.length > 4 ? bestMove.substring(4) : undefined;
+        chess.move({ from, to, promotion });
+        board.setPosition(chess.fen(), true);
+        board.enableMoveInput(inputHandler, COLOR.white);
     }
-    function makeEngineMove(chessboard) {
-        const possibleMoves = chess.moves({verbose: true})
-        if (possibleMoves.length > 0) {
-            const randomIndex = Math.floor(random() * possibleMoves.length)
-            const randomMove = possibleMoves[randomIndex]
-            setTimeout(() => { // smoother with 500ms delay
-                chess.move({from: randomMove.from, to: randomMove.to})
-                chessboard.setPosition(chess.fen(), true)
-                chessboard.enableMoveInput(inputHandler, COLOR.white)
-            }, 500)
-        }
-    }
+};
+
+function makeEngineMove(chessboard) {
+    stockfish.postMessage(`position fen ${chess.fen()}`);
+    stockfish.postMessage("go depth 15");
+}
 
 
 function inputHandler(event) {

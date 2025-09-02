@@ -20,6 +20,7 @@
   "homepage": "https://github.com/dwmclary/simple-chess-trainer#readme",
   "dependencies": {
     "chess.js": "^1.4.0",
-    "cm-chessboard": "^8.9.1"
+    "cm-chessboard": "^8.9.1",
+    "stockfish": "^17.1.0"
   }
 }
