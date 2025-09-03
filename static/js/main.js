@@ -7,6 +7,13 @@ import { Chess } from "/static/node_modules/chess.js/dist/esm/chess.js"
 const chess = new Chess()
 
 const stockfish = new Worker("/static/js/stockfish/stockfish.js");
+const eloSlider = document.getElementById("elo-slider");
+const eloRatingSpan = document.getElementById("elo-rating");
+
+function updateElo() {
+    const elo = eloSlider.value;
+    eloRatingSpan.textContent = `Elo: ${elo}`;
+}
 
 stockfish.onmessage = function(event) {
     const message = event.data;
@@ -23,7 +30,7 @@ stockfish.onmessage = function(event) {
 
 function makeEngineMove(chessboard) {
     stockfish.postMessage(`position fen ${chess.fen()}`);
-    stockfish.postMessage("go depth 15");
+    stockfish.postMessage("go depth 5");
 }
 
 
@@ -88,3 +95,12 @@ const board = new Chessboard(document.getElementById("board"), {
     ]
 })
 board.enableMoveInput(inputHandler, COLOR.white);
+
+eloSlider.addEventListener("input", (event) => {
+    stockfish.postMessage(`setoption name UCI_Elo value ${event.target.value}`);
+    updateElo();
+});
+
+stockfish.postMessage("setoption name UCI_LimitStrength value true");
+stockfish.postMessage(`setoption name UCI_Elo value ${eloSlider.value}`);
+updateElo();
