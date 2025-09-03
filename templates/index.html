@@ -8,18 +8,55 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='assets/chessboard.css') }}" />
     <link rel="stylesheet" href="{{ url_for('static', filename='assets/extensions/markers/markers.css') }}" />
     <link rel="stylesheet" href="{{ url_for('static', filename='assets/extensions/promotion-dialog/promotion-dialog.css') }}" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Lato', sans-serif;
+        }
+        /* Custom slider styles for a better look */
+        #elo-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #ffffff;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background 0.3s ease-in-out;
+        }
+        #elo-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #ffffff;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background 0.3s ease-in-out;
+        }
+        #elo-slider::-webkit-slider-thumb:hover {
+            background: #d1d5db; /* gray-300 */
+        }
+        #elo-slider::-moz-range-thumb:hover {
+            background: #d1d5db; /* gray-300 */
+        }
+    </style>
 </head>
-<body class="bg-gray-200">
+<body class="bg-gray-800 text-white">
     <div class="container mx-auto mt-10 flex flex-col items-center">
-        <h1 class="text-4xl text-center mb-10">Simple Chess Trainer</h1>
-        <div class="w-full max-w-lg md:w-1/2 mb-4">
-            <div class="flex justify-between">
-                <label for="elo-slider" class="block text-sm font-medium text-gray-700">Engine Strength</label>
-                <span id="elo-rating" class="text-sm font-medium text-gray-700"></span>
+        <h1 class="text-4xl text-center mb-2">Simple Chess Trainer</h1>
+        <p class="text-gray-400 mb-8">Built with Stockfish.js</p>
+        
+        <div class="bg-gray-900 p-6 rounded-lg shadow-xl w-full max-w-lg md:w-1/2 transition-shadow duration-300 hover:shadow-2xl">
+            <div class="mb-4">
+                <div class="flex justify-between">
+                    <label for="elo-slider" class="block text-sm font-medium text-gray-300">Engine Strength</label>
+                    <span id="elo-rating" class="text-sm font-medium text-gray-300"></span>
+                </div>
+                <input type="range" id="elo-slider" min="400" max="2000" value="1200" step="25" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
             </div>
-            <input type="range" id="elo-slider" min="400" max="2000" value="1200" step="25" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+            <div id="board"></div>
         </div>
-        <div id="board" class="w-full max-w-lg md:w-1/2"></div>
     </div>
 
 <script type="module" src="{{ url_for('static', filename='js/main.js') }}"></script>
