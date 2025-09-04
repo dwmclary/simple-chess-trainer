@@ -45,6 +45,35 @@ python app.py
 
 Open your web browser and navigate to `http://127.0.0.1:5000`.
 
+## Deployment on Google Cloud Run
+
+To deploy this application to Google Cloud Run, you'll need the [Google Cloud SDK](https://cloud.google.com/sdk/docs/install) and [Docker](https://www.docker.com/products/docker-desktop/) installed and configured.
+
+1.  **Build the Docker container:**
+    Replace `[PROJECT_ID]` with your Google Cloud Project ID and `[APP_NAME]` with a name for your app (e.g., `simple-chess-trainer`).
+    ```bash
+    docker build -t gcr.io/[PROJECT_ID]/[APP_NAME] .
+    ```
+
+2.  **Push the container to Google Container Registry (GCR):**
+    First, configure Docker to authenticate with GCR:
+    ```bash
+    gcloud auth configure-docker
+    ```
+    Then, push the image:
+    ```bash
+    docker push gcr.io/[PROJECT_ID]/[APP_NAME]
+    ```
+
+3.  **Deploy to Cloud Run:**
+    This command will deploy your container image to Cloud Run. You'll be prompted to choose a region.
+    ```bash
+    gcloud run deploy [APP_NAME] \
+      --image gcr.io/[PROJECT_ID]/[APP_NAME] \
+      --platform managed \
+      --allow-unauthenticated
+    ```
+
 ## Built With
 
 - [Flask](https://flask.palletsprojects.com/)
