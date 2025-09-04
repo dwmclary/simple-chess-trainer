@@ -9,10 +9,50 @@ const chess = new Chess()
 const stockfish = new Worker("/static/js/stockfish/stockfish.js");
 const eloSlider = document.getElementById("elo-slider");
 const eloRatingSpan = document.getElementById("elo-rating");
+const resetButton = document.getElementById("reset-button");
+const gameOverMessage = document.getElementById("game-over-message");
+const moveList = document.getElementById("move-list");
 
 function updateElo() {
     const elo = eloSlider.value;
     eloRatingSpan.textContent = `Elo: ${elo}`;
+}
+
+function updateMoveHistory() {
+    moveList.innerHTML = "";
+    const history = chess.history({ verbose: true });
+    for (let i = 0; i < history.length; i += 2) {
+        const moveNumber = i / 2 + 1;
+        const whiteMove = history[i].san;
+        const blackMove = history[i + 1] ? history[i + 1].san : "";
+        const row = `<div class="grid grid-cols-3 gap-2">
+            <div>${moveNumber}</div>
+            <div>${whiteMove}</div>
+            <div>${blackMove}</div>
+        </div>`;
+        moveList.innerHTML += row;
+    }
+}
+
+function checkGameState() {
+    let message = "";
+    if (chess.isCheckmate()) {
+        message = `Checkmate! ${chess.turn() === 'w' ? 'Black' : 'White'} wins.`;
+    } else if (chess.isStalemate()) {
+        message = "Stalemate! The game is a draw.";
+    } else if (chess.isDraw()) {
+        message = "Draw! (50-move rule or insufficient material).";
+    } else if (chess.isThreefoldRepetition()) {
+        message = "Draw! (Threefold repetition).";
+    }
+
+    if (message) {
+        gameOverMessage.textContent = message;
+        gameOverMessage.classList.remove("hidden");
+        board.disableMoveInput();
+    } else {
+        gameOverMessage.classList.add("hidden");
+    }
 }
 
 stockfish.onmessage = function(event) {
@@ -24,7 +64,11 @@ stockfish.onmessage = function(event) {
         const promotion = bestMove.length > 4 ? bestMove.substring(4) : undefined;
         chess.move({ from, to, promotion });
         board.setPosition(chess.fen(), true);
-        board.enableMoveInput(inputHandler, COLOR.white);
+        updateMoveHistory();
+        checkGameState();
+        if (!chess.isGameOver()) {
+            board.enableMoveInput(inputHandler, COLOR.white);
+        }
     }
 };
 
@@ -33,6 +77,20 @@ function makeEngineMove(chessboard) {
     stockfish.postMessage("go depth 5");
 }
 
+
+function isPromotion(move) {
+    const piece = chess.get(move.from);
+    if (!piece || piece.type !== 'p') {
+        return false;
+    }
+    if (piece.color === 'w' && move.to.charAt(1) !== '8') {
+        return false;
+    }
+    if (piece.color === 'b' && move.to.charAt(1) !== '1') {
+        return false;
+    }
+    return true;
+}
 
 function inputHandler(event) {
     switch (event.type) {
@@ -44,33 +102,35 @@ function inputHandler(event) {
             return;
         case INPUT_EVENT_TYPE.validateMoveInput:
             const move = {from: event.squareFrom, to: event.squareTo, promotion: event.promotion}
+            if (isPromotion(move)) {
+                event.chessboard.showPromotionDialog(event.squareTo, COLOR.white, (result) => {
+                    if (result.piece) {
+                        const promotionMove = { from: event.squareFrom, to: event.squareTo, promotion: result.piece.charAt(1) };
+                        const moveResult = chess.move(promotionMove);
+                        if (moveResult) {
+                            event.chessboard.setPosition(chess.fen(), true).then(() => {
+                                updateMoveHistory();
+                                checkGameState();
+                                if (!chess.isGameOver()) {
+                                    makeEngineMove(event.chessboard);
+                                }
+                            });
+                        }
+                    }
+                });
+                return true;
+            }
             const result = chess.move(move)
             if (result) {
                 event.chessboard.state.moveInputProcess.then(() => { // wait for the move input process has finished
                     event.chessboard.setPosition(chess.fen(), true).then(() => { // update position, maybe castled and wait for animation has finished
-                        makeEngineMove(event.chessboard)
+                        updateMoveHistory();
+                        checkGameState();
+                        if (!chess.isGameOver()) {
+                            makeEngineMove(event.chessboard);
+                        }
                     })
                 })
-            } else {
-                // promotion?
-                let possibleMoves = chess.moves({square: event.squareFrom, verbose: true})
-                for (const possibleMove of possibleMoves) {
-                    if (possibleMove.promotion && possibleMove.to === event.squareTo) {
-                        event.chessboard.showPromotionDialog(event.squareTo, COLOR.white, (result) => {
-                            console.log("promotion result", result)
-                            if (result.type === PROMOTION_DIALOG_RESULT_TYPE.pieceSelected) {
-                                chess.move({from: event.squareFrom, to: event.squareTo, promotion: result.piece.charAt(1)})
-                                event.chessboard.setPosition(chess.fen(), true)
-                                makeEngineMove(event.chessboard)
-                            } else {
-                                // promotion canceled
-                                event.chessboard.enableMoveInput(inputHandler, COLOR.white)
-                                event.chessboard.setPosition(chess.fen(), true)
-                            }
-                        })
-                        return true
-                    }
-                }
             }
             return result
         case INPUT_EVENT_TYPE.moveInputFinished:
@@ -99,6 +159,14 @@ board.enableMoveInput(inputHandler, COLOR.white);
 eloSlider.addEventListener("input", (event) => {
     stockfish.postMessage(`setoption name UCI_Elo value ${event.target.value}`);
     updateElo();
+});
+
+resetButton.addEventListener("click", () => {
+    chess.reset();
+    board.setPosition(chess.fen(), true);
+    board.enableMoveInput(inputHandler, COLOR.white);
+    gameOverMessage.classList.add("hidden");
+    updateMoveHistory();
 });
 
 stockfish.postMessage("setoption name UCI_LimitStrength value true");
