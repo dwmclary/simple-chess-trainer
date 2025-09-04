@@ -10,8 +10,11 @@ const stockfish = new Worker("/static/js/stockfish/stockfish.js");
 const eloSlider = document.getElementById("elo-slider");
 const eloRatingSpan = document.getElementById("elo-rating");
 const resetButton = document.getElementById("reset-button");
+const playAsBlackButton = document.getElementById("play-as-black-button");
 const gameOverMessage = document.getElementById("game-over-message");
 const moveList = document.getElementById("move-list");
+
+let playerColor = COLOR.white;
 
 function updateElo() {
     const elo = eloSlider.value;
@@ -67,16 +70,15 @@ stockfish.onmessage = function(event) {
         updateMoveHistory();
         checkGameState();
         if (!chess.isGameOver()) {
-            board.enableMoveInput(inputHandler, COLOR.white);
+            board.enableMoveInput(inputHandler, playerColor);
         }
     }
 };
 
-function makeEngineMove(chessboard) {
+function makeEngineMove() {
     stockfish.postMessage(`position fen ${chess.fen()}`);
     stockfish.postMessage("go depth 5");
 }
-
 
 function isPromotion(move) {
     const piece = chess.get(move.from);
@@ -95,6 +97,9 @@ function isPromotion(move) {
 function inputHandler(event) {
     switch (event.type) {
         case INPUT_EVENT_TYPE.moveInputStarted:
+            if (chess.turn() !== playerColor[0]) {
+                return false;
+            }
             const moves = chess.moves({square: event.squareFrom, verbose: true})
             event.chessboard.addLegalMovesMarkers(moves)
             return moves.length > 0
@@ -103,7 +108,7 @@ function inputHandler(event) {
         case INPUT_EVENT_TYPE.validateMoveInput:
             const move = {from: event.squareFrom, to: event.squareTo, promotion: event.promotion}
             if (isPromotion(move)) {
-                event.chessboard.showPromotionDialog(event.squareTo, COLOR.white, (result) => {
+                event.chessboard.showPromotionDialog(event.squareTo, playerColor, (result) => {
                     if (result.piece) {
                         const promotionMove = { from: event.squareFrom, to: event.squareTo, promotion: result.piece.charAt(1) };
                         const moveResult = chess.move(promotionMove);
@@ -112,7 +117,7 @@ function inputHandler(event) {
                                 updateMoveHistory();
                                 checkGameState();
                                 if (!chess.isGameOver()) {
-                                    makeEngineMove(event.chessboard);
+                                    makeEngineMove();
                                 }
                             });
                         }
@@ -127,7 +132,7 @@ function inputHandler(event) {
                         updateMoveHistory();
                         checkGameState();
                         if (!chess.isGameOver()) {
-                            makeEngineMove(event.chessboard);
+                            makeEngineMove();
                         }
                     })
                 })
@@ -154,20 +159,30 @@ const board = new Chessboard(document.getElementById("board"), {
         {class: PromotionDialog}
     ]
 })
-board.enableMoveInput(inputHandler, COLOR.white);
+board.enableMoveInput(inputHandler, playerColor);
 
 eloSlider.addEventListener("input", (event) => {
     stockfish.postMessage(`setoption name UCI_Elo value ${event.target.value}`);
     updateElo();
 });
 
-resetButton.addEventListener("click", () => {
+function resetGame(color = COLOR.white) {
     chess.reset();
+    playerColor = color;
+    board.setOrientation(color);
     board.setPosition(chess.fen(), true);
-    board.enableMoveInput(inputHandler, COLOR.white);
     gameOverMessage.classList.add("hidden");
     updateMoveHistory();
-});
+    if (color === COLOR.black) {
+        board.disableMoveInput();
+        makeEngineMove();
+    } else {
+        board.enableMoveInput(inputHandler, playerColor);
+    }
+}
+
+resetButton.addEventListener("click", () => resetGame(COLOR.white));
+playAsBlackButton.addEventListener("click", () => resetGame(COLOR.black));
 
 stockfish.postMessage("setoption name UCI_LimitStrength value true");
 stockfish.postMessage(`setoption name UCI_Elo value ${eloSlider.value}`);
