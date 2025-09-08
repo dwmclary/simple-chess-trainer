@@ -15,6 +15,7 @@ const gameOverMessage = document.getElementById("game-over-message");
 const moveList = document.getElementById("move-list");
 
 let playerColor = COLOR.white;
+let isEngineThinking = false;
 
 function updateElo() {
     const elo = eloSlider.value;
@@ -59,6 +60,11 @@ function checkGameState() {
 }
 
 stockfish.onmessage = function(event) {
+    if (!isEngineThinking) {
+        return;
+    }
+    isEngineThinking = false;
+
     const message = event.data;
     if (message.startsWith("bestmove")) {
         const bestMove = message.split(" ")[1];
@@ -76,6 +82,7 @@ stockfish.onmessage = function(event) {
 };
 
 function makeEngineMove() {
+    isEngineThinking = true;
     stockfish.postMessage(`position fen ${chess.fen()}`);
     stockfish.postMessage("go depth 5");
 }
@@ -167,6 +174,7 @@ eloSlider.addEventListener("input", (event) => {
 });
 
 function resetGame(color = COLOR.white) {
+    isEngineThinking = false;
     chess.reset();
     playerColor = color;
     board.setOrientation(color);
